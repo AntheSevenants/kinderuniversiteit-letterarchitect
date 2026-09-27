@@ -262,6 +262,8 @@ def generate_tiles(output_dir: str):
                 foreign_character = character_set
             elif isinstance(character_set, tuple):
                 foreign_character, latin_character = character_set
+            else:
+                raise TypeError("Character set is of an invalid type")
 
             character_path = get_character_path(
                 output_dir, alphabet_name, character_index
@@ -285,6 +287,8 @@ def generate_folds(foldables_dir: str):
                 foreign_character = character_set
             elif isinstance(character_set, tuple):
                 foreign_character, latin_character = character_set
+            else:
+                raise TypeError("Character set is of an invalid type")
 
             character_path = get_character_path(
                 foldables_dir, alphabet_name, character_index
