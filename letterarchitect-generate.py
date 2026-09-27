@@ -10,18 +10,23 @@ from typing import List, Tuple
 from dataclasses import dataclass
 
 FONT_SIZE = 350
+SMALL_FONT_SIZE = 175
 
 
 class Font:
-    LATIN: PIL.ImageFont.FreeTypeFont = PIL.ImageFont.truetype(
-        "fonts/noto-serif.ttf", FONT_SIZE
-    )
-    PHOENICIAN: PIL.ImageFont.FreeTypeFont = PIL.ImageFont.truetype(
-        "fonts/noto-phoenician.ttf", FONT_SIZE
-    )
-    ARABIC: PIL.ImageFont.FreeTypeFont = PIL.ImageFont.truetype(
-        "fonts/noto-arabic.ttf", FONT_SIZE
-    )
+    def __init__(self, font_path: str):
+        self.LARGE: PIL.ImageFont.FreeTypeFont = PIL.ImageFont.truetype(
+            font_path, FONT_SIZE
+        )
+        self.SMALL: PIL.ImageFont.FreeTypeFont = PIL.ImageFont.truetype(
+            font_path, SMALL_FONT_SIZE
+        )
+
+
+class FontFamily:
+    LATIN: Font = Font("fonts/noto-serif.ttf")
+    PHOENICIAN: Font = Font("fonts/noto-phoenician.ttf")
+    ARABIC: Font = Font("fonts/noto-arabic.ttf")
 
 
 def load_image(image_path: str):
@@ -49,7 +54,7 @@ class Colour:
 @dataclass
 class Alphabet:
     base_image: PIL.Image.Image
-    font: PIL.ImageFont.FreeTypeFont
+    font: Font
     characters: List[str] | List[Tuple[str, str]]
     colour: str
 
@@ -58,7 +63,7 @@ alphabets = {
     "latin": Alphabet(
         base_image=BaseImage.GREY,
         colour=Colour.GREY,
-        font=Font.LATIN,
+        font=FontFamily.LATIN,
         characters=[
             "a",
             "b",
@@ -85,13 +90,13 @@ alphabets = {
             "w",
             "x",
             "y",
-            "z"
+            "z",
         ],
     ),
     "greek": Alphabet(
         base_image=BaseImage.GREEN,
         colour=Colour.GREEN,
-        font=Font.LATIN,
+        font=FontFamily.LATIN,
         characters=[
             ("α", "a"),
             ("β", "b"),
@@ -118,7 +123,7 @@ alphabets = {
     "arabic": Alphabet(
         base_image=BaseImage.ORANGE,
         colour=Colour.ORANGE,
-        font=Font.ARABIC,
+        font=FontFamily.ARABIC,
         characters=[
             ("ﺍ", "a"),
             ("ﺏ", "b"),
@@ -144,7 +149,7 @@ alphabets = {
     "phoenician": Alphabet(
         base_image=BaseImage.BLUE,
         colour=Colour.BLUE,
-        font=Font.PHOENICIAN,
+        font=FontFamily.PHOENICIAN,
         characters=[
             ("𐤀", "a"),
             ("𐤁", "b"),
@@ -174,15 +179,20 @@ alphabets = {
 def build_image(
     base_image: PIL.Image.Image,
     character: str,
-    font: PIL.ImageFont.FreeTypeFont,
+    font: Font,
     color: str,
 ):
     image = base_image.copy()
     draw = PIL.ImageDraw.Draw(image)
 
+    if len(character) == 1:
+        true_font = font.LARGE
+    else:
+        true_font = font.SMALL
+
     # 1. Get the bounding box of the text
     # We use (0, 0) as the dummy anchor to measure the text size
-    bbox = draw.textbbox((0, 0), character, font=font)
+    bbox = draw.textbbox((0, 0), character, font=true_font)
 
     # bbox is (left, top, right, bottom)
     left, top, right, bottom = bbox
@@ -202,23 +212,25 @@ def build_image(
     # IMPORTANT: We must subtract the 'left' and 'top' offsets from the bbox.
     # If we don't, the internal font padding will push the characters
     # down and to the right.
-    draw.text((target_x - left, target_y - top), character, font=font, fill=color)
+    draw.text((target_x - left, target_y - top), character, font=true_font, fill=color)
 
     return image
 
 
-def combine_into_foldable(front_image: PIL.Image.Image, back_image: PIL.Image.Image) -> PIL.Image.Image:
+def combine_into_foldable(
+    front_image: PIL.Image.Image, back_image: PIL.Image.Image
+) -> PIL.Image.Image:
     line_thickness = 1
 
     combined_width = front_image.width + line_thickness + back_image.width
     combined_height = max(front_image.height, back_image.height)
 
-    combined_image = PIL.Image.new('RGB', (combined_width, combined_height))
+    combined_image = PIL.Image.new("RGB", (combined_width, combined_height))
     combined_image.paste(front_image, (0, 0))
     combined_image.paste(back_image, (back_image.width + line_thickness, 0))
 
     line_x = front_image.width
-    line_color = (128, 128, 128, 64) 
+    line_color = (128, 128, 128, 64)
     dot_size = 2  # Length of each dash/dot
     gap_size = 4  # Gap between dots
 
@@ -226,8 +238,7 @@ def combine_into_foldable(front_image: PIL.Image.Image, back_image: PIL.Image.Im
     for y in range(0, combined_height, dot_size + gap_size):
         # Draw a tiny vertical line segment
         draw.line(
-            [(line_x, y), (line_x, min(y + dot_size, combined_height))], 
-            fill=line_color
+            [(line_x, y), (line_x, min(y + dot_size, combined_height))], fill=line_color
         )
 
     return combined_image
@@ -238,6 +249,7 @@ def get_character_path(output_dir: str, alphabet_name: str, character_index: int
     os.makedirs(alphabet_dir, exist_ok=True)
 
     return os.path.join(alphabet_dir, f"{character_index}.png")
+
 
 def generate_tiles(output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
@@ -251,11 +263,14 @@ def generate_tiles(output_dir: str):
             elif isinstance(character_set, tuple):
                 foreign_character, latin_character = character_set
 
-            character_path = get_character_path(output_dir, alphabet_name, character_index)
+            character_path = get_character_path(
+                output_dir, alphabet_name, character_index
+            )
             character_img = build_image(
                 alphabet.base_image, foreign_character, alphabet.font, alphabet.colour
             )
             character_img.save(character_path)
+
 
 def generate_folds(foldables_dir: str):
     os.makedirs(foldables_dir, exist_ok=True)
@@ -271,15 +286,22 @@ def generate_folds(foldables_dir: str):
             elif isinstance(character_set, tuple):
                 foreign_character, latin_character = character_set
 
-            character_path = get_character_path(foldables_dir, alphabet_name, character_index)
+            character_path = get_character_path(
+                foldables_dir, alphabet_name, character_index
+            )
             foreign_character_image = build_image(
                 alphabet.base_image, foreign_character, alphabet.font, alphabet.colour
             )
             latin_character_image = build_image(
-                latin_alphabet.base_image, latin_character, latin_alphabet.font, latin_alphabet.colour
+                latin_alphabet.base_image,
+                latin_character,
+                latin_alphabet.font,
+                latin_alphabet.colour,
             )
 
-            foldable_image = combine_into_foldable(foreign_character_image, latin_character_image)
+            foldable_image = combine_into_foldable(
+                foreign_character_image, latin_character_image
+            )
             foldable_image.save(character_path)
 
 
