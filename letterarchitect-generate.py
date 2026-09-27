@@ -202,13 +202,39 @@ def build_image(
     return image
 
 
+def combine_into_foldable(front_image: PIL.Image.Image, back_image: PIL.Image.Image) -> PIL.Image.Image:
+    line_thickness = 1
+
+    combined_width = front_image.width + line_thickness + back_image.width
+    combined_height = max(front_image.height, back_image.height)
+
+    combined_image = PIL.Image.new('RGB', (combined_width, combined_height))
+    combined_image.paste(front_image, (0, 0))
+    combined_image.paste(back_image, (back_image.width + line_thickness, 0))
+
+    line_x = front_image.width
+    line_color = (128, 128, 128, 64) 
+    dot_size = 2  # Length of each dash/dot
+    gap_size = 4  # Gap between dots
+
+    draw = PIL.ImageDraw.Draw(combined_image)
+    for y in range(0, combined_height, dot_size + gap_size):
+        # Draw a tiny vertical line segment
+        draw.line(
+            [(line_x, y), (line_x, min(y + dot_size, combined_height))], 
+            fill=line_color
+        )
+
+    return combined_image
+
+
 def get_character_path(output_dir: str, alphabet_name: str, character_index: int):
     alphabet_dir = os.path.join(output_dir, alphabet_name)
     os.makedirs(alphabet_dir, exist_ok=True)
 
     return os.path.join(alphabet_dir, f"{character_index}.png")
 
-def main(output_dir: str):
+def generate_tiles(output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
 
     for alphabet_name, alphabet in alphabets.items():
@@ -226,6 +252,31 @@ def main(output_dir: str):
             )
             character_img.save(character_path)
 
+def generate_folds(foldables_dir: str):
+    os.makedirs(foldables_dir, exist_ok=True)
+
+    latin_alphabet = alphabets["latin"]
+
+    for alphabet_name, alphabet in alphabets.items():
+        for character_index, character_set in enumerate(alphabet.characters):
+            # single character
+            if isinstance(character_set, str):
+                latin_character = character_set
+                foreign_character = character_set
+            elif isinstance(character_set, tuple):
+                foreign_character, latin_character = character_set
+
+            character_path = get_character_path(foldables_dir, alphabet_name, character_index)
+            foreign_character_image = build_image(
+                alphabet.base_image, foreign_character, alphabet.font, alphabet.colour
+            )
+            latin_character_image = build_image(
+                latin_alphabet.base_image, latin_character, latin_alphabet.font, latin_alphabet.colour
+            )
+
+            foldable_image = combine_into_foldable(foreign_character_image, latin_character_image)
+            foldable_image.save(character_path)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -239,4 +290,10 @@ if __name__ == "__main__":
     if not os.path.exists(args.output_dir):
         raise FileNotFoundError("Output directory does not exist")
 
-    main(args.output_dir)
+    singles_dir = os.path.join(args.output_dir, "single")
+    os.makedirs(singles_dir, exist_ok=True)
+    generate_tiles(singles_dir)
+
+    foldables_dir = os.path.join(args.output_dir, "foldables")
+    os.makedirs(foldables_dir, exist_ok=True)
+    generate_folds(foldables_dir)
