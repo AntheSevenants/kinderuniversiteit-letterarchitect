@@ -222,11 +222,12 @@ def combine_into_foldable(
     return combined_image
 
 
-def get_character_path(output_dir: str, alphabet_name: str, character_index: int):
+def get_character_path(output_dir: str, alphabet_name: str, character_name: str):
+    character_name = character_name.replace("/", "_")
     alphabet_dir = os.path.join(output_dir, alphabet_name)
     os.makedirs(alphabet_dir, exist_ok=True)
 
-    return os.path.join(alphabet_dir, f"{character_index}.png")
+    return os.path.join(alphabet_dir, f"{character_name}.png")
 
 
 def generate_tiles(output_dir: str):
@@ -244,7 +245,7 @@ def generate_tiles(output_dir: str):
                 raise TypeError("Character set is of an invalid type")
 
             character_path = get_character_path(
-                output_dir, alphabet_name, character_index
+                output_dir, alphabet_name, latin_character
             )
             character_img = build_image(
                 alphabet.base_image, foreign_character, alphabet.font, alphabet.colour
@@ -269,7 +270,7 @@ def generate_folds(foldables_dir: str):
                 raise TypeError("Character set is of an invalid type")
 
             character_path = get_character_path(
-                foldables_dir, alphabet_name, character_index
+                foldables_dir, alphabet_name, latin_character
             )
             foreign_character_image = build_image(
                 alphabet.base_image, foreign_character, alphabet.font, alphabet.colour
