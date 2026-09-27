@@ -202,13 +202,16 @@ def build_image(
     return image
 
 
+def get_character_path(output_dir: str, alphabet_name: str, character_index: int):
+    alphabet_dir = os.path.join(output_dir, alphabet_name)
+    os.makedirs(alphabet_dir, exist_ok=True)
+
+    return os.path.join(alphabet_dir, f"{character_index}.png")
+
 def main(output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
 
     for alphabet_name, alphabet in alphabets.items():
-        alphabet_dir = os.path.join(output_dir, alphabet_name)
-        os.makedirs(alphabet_dir, exist_ok=True)
-
         for character_index, character_set in enumerate(alphabet.characters):
             # single character
             if isinstance(character_set, str):
@@ -217,7 +220,7 @@ def main(output_dir: str):
             elif isinstance(character_set, tuple):
                 foreign_character, latin_character = character_set
 
-            character_path = os.path.join(alphabet_dir, f"{character_index}.png")
+            character_path = get_character_path(output_dir, alphabet_name, character_index)
             character_img = build_image(
                 alphabet.base_image, foreign_character, alphabet.font, alphabet.colour
             )
