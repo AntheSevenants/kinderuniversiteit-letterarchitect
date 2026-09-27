@@ -50,7 +50,7 @@ class Colour:
 class Alphabet:
     base_image: PIL.Image.Image
     font: PIL.ImageFont.FreeTypeFont
-    characters: List[str] | List[Tuple[str, str]] | List[Tuple[str, str, Tuple[int, int]]]
+    characters: List[str] | List[Tuple[str, str]]
     colour: str
 
 
