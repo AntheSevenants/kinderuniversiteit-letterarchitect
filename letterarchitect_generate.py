@@ -104,20 +104,20 @@ alphabets = {
         characters=[
             ("ﺍ", "a"),
             ("ﺏ", "b"),
-            ("ﺝ", "c/g"),
+            ("ﺝ", "g"),
             ("ﺩ", "d"),
-            ("ﻩ", "e"),
-            ("ﻭ", "f/v"),
+            # ("ﻩ", "e"),
+            ("ف", "f/v"),
             ("ﻭ", "u/i/w"),
-            ("ﺯ", "z"),
+            ("ز", "z"),
             ("ﺡ", "h"),
             ("ﻱ", "j"),
             ("ﻙ", "k"),
             ("ﻝ", "l"),
             ("ﻡ", "m"),
             ("ﻥ", "n"),
-            ("ﻉ", "o"),
-            ("ﻑ", "p"),
+            # ("ﻉ", "o"),
+            # ("ﻑ", "p"),
             ("ﻕ", "q"),
             ("ﺭ", "r"),
             ("ﺱ", "s"),
@@ -131,7 +131,7 @@ alphabets = {
         characters=[
             ("𐤀", "a"),
             ("𐤁", "b"),
-            ("𐤂", "g"),
+            ("𐤂", "c/g"),
             ("𐤃", "d"),
             ("𐤄", "e"),
             ("𐤅", "u/i/w"),
@@ -219,13 +219,17 @@ def combine_into_foldable(
             [(line_x, y), (line_x, min(y + dot_size, combined_height))], fill=line_color
         )
 
+    draw.line([(0, 0), (combined_width, 0)], fill=line_color)
+    draw.line([(0, 0), (0, combined_height)], fill=line_color)
+    draw.line([(combined_width - 1, 0), (combined_width - 1, combined_height - 1)], fill=line_color)
+    draw.line([(0, combined_height - 1), (combined_width - 1, combined_height - 1)], fill=line_color)
+
     return combined_image
 
 
 def get_character_path(output_dir: str, alphabet_name: str, character_name: str):
     character_name = character_name.replace("/", "_")
     alphabet_dir = os.path.join(output_dir, alphabet_name)
-    os.makedirs(alphabet_dir, exist_ok=True)
 
     return os.path.join(alphabet_dir, f"{character_name}.png")
 
