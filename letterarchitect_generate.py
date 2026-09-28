@@ -230,6 +230,7 @@ def combine_into_foldable(
 def get_character_path(output_dir: str, alphabet_name: str, character_name: str):
     character_name = character_name.replace("/", "_")
     alphabet_dir = os.path.join(output_dir, alphabet_name)
+    os.makedirs(alphabet_dir, exist_ok=True)
 
     return os.path.join(alphabet_dir, f"{character_name}.png")
 
